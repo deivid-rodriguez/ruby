@@ -380,8 +380,7 @@ rb_exec_event_hooks(rb_trace_arg_t *trace_arg, rb_hook_list_t *hooks, int pop_p)
 	}
     }
     else {
-	if (ec->trace_arg == NULL && /* check reentrant */
-	    trace_arg->self != rb_mRubyVMFrozenCore /* skip special methods. TODO: remove it. */) {
+	if (ec->trace_arg == NULL /* check reentrant */){
 	    const VALUE errinfo = ec->errinfo;
 	    const VALUE old_recursive = ec->local_storage_recursive_hash;
 	    int state = 0;
