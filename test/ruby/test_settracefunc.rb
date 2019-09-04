@@ -329,39 +329,104 @@ class TestSetTraceFunc < Test::Unit::TestCase
     end
     th.join
 
-    [["c-return", 1, :set_trace_func, Thread, :set],
-     ["line", 2, __method__, self.class, :set],
-     ["c-call", 2, :add_trace_func, Thread, :set]].each do |e|
-      assert_equal(e, events[:set].shift)
-    end
-
-    [["c-return", 2, :add_trace_func, Thread],
-     ["line", 3, __method__, self.class],
-     ["c-call", 3, :inherited, Class],
-     ["c-return", 3, :inherited, Class],
-     ["class", 3, nil, nil],
-     ["line", 4, nil, nil],
-     ["c-call", 4, :method_added, Module],
-     ["c-return", 4, :method_added, Module],
-     ["end", 7, nil, nil],
-     ["line", 8, __method__, self.class],
-     ["c-call", 8, :new, Class],
-     ["c-call", 8, :initialize, BasicObject],
-     ["c-return", 8, :initialize, BasicObject],
-     ["c-return", 8, :new, Class],
-     ["call", 4, :foo, ThreadTraceInnerClass],
-     ["line", 5, :foo, ThreadTraceInnerClass],
-     ["c-call", 5, :+, Integer],
-     ["c-return", 5, :+, Integer],
-     ["return", 6, :foo, ThreadTraceInnerClass],
-     ["line", 9, __method__, self.class],
-     ["c-call", 9, :set_trace_func, Thread]].each do |e|
-      [:set, :add].each do |type|
-        assert_equal(e + [type], events[type].shift)
+    expected = [
+      ["c-return", 1, :set_trace_func, Thread],
+      ["line", 2, __method__, self.class],
+      ["c-call", 2, :add_trace_func, Thread],
+      ["line", 311, __method__, self.class],
+      ["c-return", 2, :add_trace_func, Thread],
+      ["line", 311, __method__, self.class],
+      ["line", 3, __method__, self.class],
+      ["line", 311, __method__, self.class],
+      ["c-call", 3, :inherited, Class],
+      ["line", 311, __method__, self.class],
+      ["c-return", 3, :inherited, Class],
+      ["line", 311, __method__, self.class],
+      ["class", 3, nil, nil],
+      ["line", 311, __method__, self.class],
+      ["line", 4, nil, nil],
+      ["line", 311, __method__, self.class],
+      ["c-call", 4, :method_added, Module],
+      ["line", 311, __method__, self.class],
+      ["c-return", 4, :method_added, Module],
+      ["line", 311, __method__, self.class],
+      ["end", 7, nil, nil],
+      ["line", 311, __method__, self.class],
+      ["line", 8, __method__, self.class],
+      ["line", 311, __method__, self.class],
+      ["c-call", 8, :new, Class],
+      ["line", 311, __method__, self.class],
+      ["c-call", 8, :initialize, BasicObject],
+      ["line", 311, __method__, self.class],
+      ["c-return", 8, :initialize, BasicObject],
+      ["line", 311, __method__, self.class],
+      ["c-return", 8, :new, Class],
+      ["line", 311, __method__, self.class],
+      ["call", 4, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 311, __method__, self.class],
+      ["line", 5, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 311, __method__, self.class],
+      ["c-call", 5, :+, Integer],
+      ["line", 311, __method__, self.class],
+      ["c-return", 5, :+, Integer],
+      ["line", 311, __method__, self.class],
+      ["return", 6, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 311, __method__, self.class],
+      ["line", 9, __method__, self.class],
+      ["line", 311, __method__, self.class],
+      ["c-call", 9, :set_trace_func, Thread]].map do |e|
+        e + [:set]
       end
-    end
-    assert_equal([], events[:set])
-    assert_equal([], events[:add])
+
+    assert_equal(expected, events[:set])
+
+    expected = [
+      ["c-return", 2, :add_trace_func, Thread],
+      ["line", 307, __method__, self.class],
+      ["line", 3, __method__, self.class],
+      ["line", 307, __method__, self.class],
+      ["c-call", 3, :inherited, Class],
+      ["line", 307, __method__, self.class],
+      ["c-return", 3, :inherited, Class],
+      ["line", 307, __method__, self.class],
+      ["class", 3, nil, nil],
+      ["line", 307, __method__, self.class],
+      ["line", 4, nil, nil],
+      ["line", 307, __method__, self.class],
+      ["c-call", 4, :method_added, Module],
+      ["line", 307, __method__, self.class],
+      ["c-return", 4, :method_added, Module],
+      ["line", 307, __method__, self.class],
+      ["end", 7, nil, nil],
+      ["line", 307, __method__, self.class],
+      ["line", 8, __method__, self.class],
+      ["line", 307, __method__, self.class],
+      ["c-call", 8, :new, Class],
+      ["line", 307, __method__, self.class],
+      ["c-call", 8, :initialize, BasicObject],
+      ["line", 307, __method__, self.class],
+      ["c-return", 8, :initialize, BasicObject],
+      ["line", 307, __method__, self.class],
+      ["c-return", 8, :new, Class],
+      ["line", 307, __method__, self.class],
+      ["call", 4, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 307, __method__, self.class],
+      ["line", 5, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 307, __method__, self.class],
+      ["c-call", 5, :+, Integer],
+      ["line", 307, __method__, self.class],
+      ["c-return", 5, :+, Integer],
+      ["line", 307, __method__, self.class],
+      ["return", 6, :foo, self.class::ThreadTraceInnerClass],
+      ["line", 307, __method__, self.class],
+      ["line", 9, __method__, self.class],
+      ["line", 307, __method__, self.class],
+      ["c-call", 9, :set_trace_func, Thread],
+      ["line", 307, __method__, self.class]].map do |e|
+        e + [:add]
+      end
+
+    assert_equal(expected, events[:add])
   end
 
   def test_trace_defined_method
@@ -952,7 +1017,9 @@ class TestSetTraceFunc < Test::Unit::TestCase
         m1_test_trace_point_at_return_when_exception
       end
     end
+  end
 
+  def test_tracepoint_does_not_emit_b_return_when_raising_inside_handler
     bug_7668 = '[Bug #7668]'
     ary = []
     trace = TracePoint.new{|tp|
@@ -967,8 +1034,31 @@ class TestSetTraceFunc < Test::Unit::TestCase
         }
       }
     rescue
-      assert_equal([:b_call, :b_return], ary, bug_7668)
+      assert_equal([:b_call], ary, bug_7668)
     end
+  end
+
+  def test_tracepoint_reenters_handler_if_possible
+    bug_bla = '[Bug #bla]'
+    ary = []
+    trace_class = TracePoint.new(:class){|tpc|
+      next if !target_thread?
+      ary << tpc.event
+    }
+
+    trace_class.enable{
+      trace_line = TracePoint.new(:line){|tpl|
+        next if !target_thread?
+        eval "class Hola; end"
+        ary << tpl.event
+      }
+
+      trace_line.enable{
+          sleep 0
+      }
+    }
+
+    assert_equal([:class, :line], ary, bug_bla)
   end
 
   def m1_for_test_trace_point_binding_in_ifunc(arg)
@@ -2042,7 +2132,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
         events << :___
       end
     end
-    assert_equal [:tp1, :tp1, :tp1, :tp1, :tp2, :tp1, :___], events
+    assert_equal [:tp1, :tp1, :tp1, :tp1, :tp1, :tp2, :tp1, :___], events
 
     # success with two tracepoints (targeting/global)
     events = []
@@ -2054,7 +2144,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
         events << :___
       end
     end
-    assert_equal [:tp2, :tp2, :tp1, :tp2, :___], events
+    assert_equal [:tp2, :tp2, :tp2, :tp1, :tp2, :___], events
   end
 
   def test_tracepoint_enable_with_target_line

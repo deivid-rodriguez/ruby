@@ -37,6 +37,7 @@ typedef struct rb_event_hook_struct {
     rb_event_hook_func_t func;
     VALUE data;
     struct rb_event_hook_struct *next;
+    unsigned int running;
 
     struct {
 	rb_thread_t *th;
@@ -106,6 +107,7 @@ alloc_event_hook(rb_event_hook_func_t func, rb_event_flag_t events, VALUE data, 
     hook->events = events;
     hook->func = func;
     hook->data = data;
+    hook->running = 0;
 
     /* no filters */
     hook->filter.th = NULL;
@@ -295,14 +297,17 @@ exec_hooks_body(const rb_execution_context_t *ec, rb_hook_list_t *list, const rb
     for (hook = list->hooks; hook; hook = hook->next) {
 	if (!(hook->hook_flags & RUBY_EVENT_HOOK_FLAG_DELETED) &&
 	    (trace_arg->event & hook->events) &&
+            (hook->running == 0) &&
             (LIKELY(hook->filter.th == 0) || hook->filter.th == rb_ec_thread_ptr(ec)) &&
             (LIKELY(hook->filter.target_line == 0) || (hook->filter.target_line == (unsigned int)rb_vm_get_sourceline(ec->cfp)))) {
+            hook->running++;
 	    if (!(hook->hook_flags & RUBY_EVENT_HOOK_FLAG_RAW_ARG)) {
 		(*hook->func)(trace_arg->event, hook->data, trace_arg->self, trace_arg->id, trace_arg->klass);
 	    }
 	    else {
 		(*((rb_event_hook_raw_arg_func_t)hook->func))(hook->data, trace_arg);
 	    }
+            hook->running--;
 	}
     }
 }
@@ -380,36 +385,38 @@ rb_exec_event_hooks(rb_trace_arg_t *trace_arg, rb_hook_list_t *hooks, int pop_p)
 	}
     }
     else {
-	if (ec->trace_arg == NULL /* check reentrant */){
-	    const VALUE errinfo = ec->errinfo;
-	    const VALUE old_recursive = ec->local_storage_recursive_hash;
-	    int state = 0;
+        const VALUE errinfo = ec->errinfo;
+        const VALUE old_recursive = ec->local_storage_recursive_hash;
+        int state = 0;
 
-            /* setup */
-	    ec->local_storage_recursive_hash = ec->local_storage_recursive_hash_for_trace;
-	    ec->errinfo = Qnil;
-	    ec->trace_arg = trace_arg;
+        /* setup */
+        ec->local_storage_recursive_hash = ec->local_storage_recursive_hash_for_trace;
+        ec->errinfo = Qnil;
 
-            /* kick hooks */
-            if ((state = exec_hooks_protected(ec, hooks, trace_arg)) == TAG_NONE) {
-                ec->errinfo = errinfo;
+        rb_trace_arg_t *prev_trace_arg = ec->trace_arg;
+
+        ec->trace_arg = trace_arg;
+
+        /* kick hooks */
+        if ((state = exec_hooks_protected(ec, hooks, trace_arg)) == TAG_NONE) {
+            ec->errinfo = errinfo;
+        }
+
+        ec->trace_arg = prev_trace_arg;
+
+        /* cleanup */
+        ec->local_storage_recursive_hash_for_trace = ec->local_storage_recursive_hash;
+        ec->local_storage_recursive_hash = old_recursive;
+
+        if (state) {
+            if (pop_p) {
+                if (VM_FRAME_FINISHED_P(ec->cfp)) {
+                    ec->tag = ec->tag->prev;
+                }
+                rb_vm_pop_frame(ec);
             }
-
-            /* cleanup */
-            ec->trace_arg = NULL;
-	    ec->local_storage_recursive_hash_for_trace = ec->local_storage_recursive_hash;
-	    ec->local_storage_recursive_hash = old_recursive;
-
-	    if (state) {
-		if (pop_p) {
-		    if (VM_FRAME_FINISHED_P(ec->cfp)) {
-			ec->tag = ec->tag->prev;
-		    }
-		    rb_vm_pop_frame(ec);
-		}
-		EC_JUMP_TAG(ec, state);
-	    }
-	}
+            EC_JUMP_TAG(ec, state);
+        }
     }
 }
 

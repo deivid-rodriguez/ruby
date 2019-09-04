@@ -4391,10 +4391,6 @@ vm_trace(rb_execution_context_t *ec, rb_control_frame_t *reg_cfp, const VALUE *p
 #endif
 	    return;
         }
-        else if (ec->trace_arg != NULL) {
-            /* already tracing */
-            return;
-        }
         else {
             rb_hook_list_t *global_hooks = rb_vm_global_hooks(ec);
 

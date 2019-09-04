@@ -326,11 +326,11 @@ describe 'TracePoint#enable' do
 
           trace_outer.enable do
             trace_inner.enable(target: target) do
-              target.call
+              target.call # emits an extra :b_call event that triggers trace_outer
             end
           end
 
-          ScratchPad.recorded.should == [:outer, :outer, :outer, :inner]
+          ScratchPad.recorded.should == [:outer, :outer, :outer, :outer, :inner]
         end
 
         it "traces events when trace point with target is enabled in another trace point enabled with target" do
@@ -366,11 +366,11 @@ describe 'TracePoint#enable' do
 
           trace_outer.enable(target: target) do
             trace_inner.enable do
-              target.call
+              target.call # emits an extra :b_call event that triggers trace_inner
             end
           end
 
-          ScratchPad.recorded.should == [:inner, :inner, :outer]
+          ScratchPad.recorded.should == [:inner, :inner, :inner, :outer]
         end
       end
     end
