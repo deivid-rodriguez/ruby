@@ -94,6 +94,7 @@ end
 
 require_relative 'uri/version'
 require_relative 'uri/common'
+require_relative 'uri/core_ext/kernel/uri'
 require_relative 'uri/generic'
 require_relative 'uri/file'
 require_relative 'uri/ftp'
