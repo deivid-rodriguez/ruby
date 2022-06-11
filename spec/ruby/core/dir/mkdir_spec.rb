@@ -65,6 +65,10 @@ describe "Dir.mkdir" do
   it "raises Errno::EEXIST if the argument points to the existing file" do
     -> { Dir.mkdir("#{DirSpecs.mock_dir}/file_one.ext") }.should raise_error(Errno::EEXIST)
   end
+
+  it "raises Errno::ENAMETOOLONG if the argument is too long" do
+    -> { Dir.mkdir("#{DirSpecs.mock_dir}/#{"a" * 256}") }.should raise_error(Errno::ENAMETOOLONG)
+  end
 end
 
 # The permissions flag are not supported on Windows as stated in documentation:
